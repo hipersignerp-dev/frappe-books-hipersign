@@ -11,7 +11,6 @@
       </span>
       <FrappeButton
         v-else
-        :icon="showDeleteButton ? 'lucide-x' : undefined"
         variant="ghost"
         size="xs"
         :aria-label="t`Delete row`"
@@ -22,6 +21,7 @@
         <span v-if="!showDeleteButton">
           {{ row.idx + 1 }}
         </span>
+        <span v-else class="lucide-x size-4 text-ink-red-4" aria-hidden="true" />
       </FrappeButton>
     </FrappeListCell>
 
