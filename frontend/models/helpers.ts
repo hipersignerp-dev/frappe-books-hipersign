@@ -461,8 +461,12 @@ export async function addItem(name: string, doc: FrappeDoc, quantity = 1) {
     return;
   }
 
-  await added.set('item', name);
-  if (quantity !== 1) {
-    await added.set('quantity', quantity);
+  const d = added as any;
+  for (const f of ['qty', 'transfer_quantity', 'quantity']) {
+    if (d.schema.fields.some((x: any) => x.fieldname === f)) d[f] = quantity;
   }
+  if (d.schema.fields.some((x: any) => x.fieldname === 'unit_conversion_factor')) {
+    d.unit_conversion_factor = 1;
+  }
+  await added.set('item', name);
 }
