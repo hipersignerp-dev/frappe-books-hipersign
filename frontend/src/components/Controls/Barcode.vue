@@ -84,7 +84,7 @@ export default defineComponent({
         return;
       }
       this.cooldown = barcode;
-      setTimeout(() => (this.cooldown = ''), 100);
+      setTimeout(() => (this.cooldown = ''), 1000);
 
       const scanned = await getScannedItem(barcode);
       if (!scanned) {
