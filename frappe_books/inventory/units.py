@@ -34,6 +34,10 @@ def validate_whole_quantities(rows):
 
 
 def _populate_row_units(row, unit, factors):
+	# A row edited by Qty alone, as a scanned row sends it, keeps that Qty.
+	if not row.get("transfer_quantity") and row.meta.has_field("qty") and row.get("qty"):
+		row.transfer_quantity = row.qty
+		row.quantity = None
 	row.unit = unit
 	row.transfer_unit = row.transfer_unit or unit
 	row.unit_conversion_factor = factor = _conversion_factor(row, factors)
