@@ -59,6 +59,13 @@
     />
     <div v-else-if="!isMobile" class="flex min-h-0 flex-1">
       <main class="flex min-w-0 flex-1 flex-col">
+        <VariantStockPanel
+          class="mt-4"
+          :item-name="variantItem"
+          :refresh-key="variantRefreshKey"
+          @add-variant="addVariant"
+          @close="variantItem = ''"
+        />
         <POSItemPicker
           :items="filteredItems as POSItem[]"
           :search-items="items as POSItem[]"
@@ -217,6 +224,7 @@ import POSActionButton from 'src/components/POS/POSActionButton.vue';
 import POSHeaderActions from 'src/components/POS/POSHeaderActions.vue';
 import POSPriceActions from 'src/components/POS/POSPriceActions.vue';
 import SelectedItemTable from 'src/components/POS/SelectedItemTable.vue';
+import VariantStockPanel from 'src/components/POS/VariantStockPanel.vue';
 import PaymentModal from './PaymentModal.vue';
 import KeyboardModal from './KeyboardModal.vue';
 import PriceListModal from './PriceListModal.vue';
@@ -301,6 +309,7 @@ export default defineComponent({
     POSOrderSummary,
     POSInvoiceActions,
     SelectedItemTable,
+    VariantStockPanel,
     PaymentModal,
     KeyboardModal,
     PriceListModal,
@@ -372,6 +381,8 @@ export default defineComponent({
         addition: CartAddition;
       } | null,
       expandedRow: undefined as string | undefined,
+      variantItem: '' as string,
+      variantRefreshKey: 0,
     };
   },
   computed: {
@@ -786,6 +797,7 @@ export default defineComponent({
           return;
         }
 
+        this.variantItem = item.name;
         if (item.hasBatch) {
           this.selectBatch(item, quantity, addition);
           return;
@@ -800,6 +812,21 @@ export default defineComponent({
           message: getErrorMessage(error as Error),
         });
       }
+    },
+    /** Adds the variant picked in the variant panel, listed or not. */
+    async addVariant(name: string) {
+      const listed = (this.items as POSItem[]).find((item) => item.name === name);
+      const item = listed ?? (await getScannedItem(name, this.itemQtyMap))?.item;
+      if (!item) {
+        showToast({
+          id: POS_ITEM_TOAST_ID,
+          type: 'error',
+          message: t`Item ${name} not found.`,
+        });
+        return;
+      }
+
+      await this.addItem(item as POSItem);
     },
     selectBatch(item: POSItem, quantity: number, addition: CartAddition) {
       this.selectedItemForBatch = item.name;
@@ -849,6 +876,7 @@ export default defineComponent({
 
         await this.afterTransaction();
         await this.setItems();
+        this.variantRefreshKey++;
       } catch (error) {
         showToast({
           type: 'error',
