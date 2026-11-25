@@ -35,6 +35,30 @@ export const productMetas = [
       { fieldname: 'barcode', label: 'Barcode', fieldtype: 'Data', read_only: 1 },
     ],
   },
+  {
+    name: 'Barcode Print',
+    autoname: 'format:BCP-{#####}',
+    title_field: 'title',
+    permissions: [],
+    fields: [
+      { fieldname: 'title', label: 'Title', fieldtype: 'Data' },
+      { fieldname: 'date', label: 'Date', fieldtype: 'Date', default: 'Today' },
+      { fieldname: 'items', label: 'Items', fieldtype: 'Table', options: 'Barcode Print Item', reqd: 1 },
+      { fieldname: 'total_labels', label: 'Total Labels', fieldtype: 'Int', read_only: 1 },
+    ],
+  },
+  {
+    name: 'Barcode Print Item',
+    istable: 1,
+    permissions: [],
+    fields: [
+      { fieldname: 'item', label: 'Item', fieldtype: 'Link', options: 'Books Item', reqd: 1 },
+      { fieldname: 'item_code', label: 'Item Code', fieldtype: 'Data', read_only: 1 },
+      { fieldname: 'barcode', label: 'Barcode', fieldtype: 'Data', read_only: 1 },
+      { fieldname: 'rate', label: 'Rate', fieldtype: 'Currency', read_only: 1 },
+      { fieldname: 'qty', label: 'Labels', fieldtype: 'Int', reqd: 1, default: '1' },
+    ],
+  },
 ];
 
 

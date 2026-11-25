@@ -110,6 +110,12 @@ function getInventorySidebar(): SidebarRoot[] {
           schemaName: 'Product',
         },
         {
+          label: t`Print Barcodes`,
+          name: 'barcode-print',
+          route: '/list/BarcodePrint',
+          schemaName: 'BarcodePrint',
+        },
+        {
           label: t`Stock Movement`,
           name: 'stock-movement',
           route: '/list/StockMovement',
