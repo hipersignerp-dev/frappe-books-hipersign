@@ -140,6 +140,11 @@ function findByBarcode<T extends ScannableItem>(
   }
 }
 
+/** Whether a code is a whole barcode: 12 digits, or a scale barcode per POS Settings. */
+export function isFullBarcode(code: string, settings?: BarcodeSettings) {
+  return /^\d{12}$/.test(code) || !!parseWeightBarcode(code, settings);
+}
+
 /** Splits a scale barcode (prefix, item code, weight in grams) per POS Settings. */
 function parseWeightBarcode(
   code: string,

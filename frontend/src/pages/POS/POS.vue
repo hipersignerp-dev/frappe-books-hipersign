@@ -307,7 +307,11 @@ import {
   ItemQtyMap,
 } from 'src/components/POS/types';
 import { ValidationError } from 'fyo/utils/errors';
-import { filterPOSItems, getScannedItem } from 'src/utils/posItemSearch';
+import {
+  filterPOSItems,
+  getScannedItem,
+  isFullBarcode,
+} from 'src/utils/posItemSearch';
 
 const COMPONENT_NAME = 'POS';
 
@@ -404,6 +408,9 @@ export default defineComponent({
       /** While on, scanning or picking an item shows its stock instead of billing it. */
       checkingStock: false,
       stockCheckRequest: 0,
+      barcodeScanRequest: 0,
+      scanningBarcode: '',
+      autoAddedBarcode: '',
     };
   },
   computed: {
@@ -623,7 +630,26 @@ export default defineComponent({
         return;
       }
 
-      const scanned = addItem && (await getScannedItem(code, this.itemQtyMap));
+      if (!addItem) {
+        if (code.trim() !== this.autoAddedBarcode) {
+          this.autoAddedBarcode = '';
+        }
+        await this.addScannedBarcode(code);
+        return;
+      }
+
+      // A scanner's Enter after a barcode already billed as it arrived adds
+      // nothing more.
+      const barcode = code.trim();
+      if (barcode && barcode === this.scanningBarcode) {
+        return;
+      }
+      if (barcode && barcode === this.autoAddedBarcode) {
+        this.autoAddedBarcode = '';
+        return;
+      }
+
+      const scanned = await getScannedItem(code, this.itemQtyMap);
       if (!scanned) {
         return;
       }
@@ -633,6 +659,43 @@ export default defineComponent({
       // Text typed or scanned while the item was added stays.
       if (this.itemSearchTerm === code) {
         this.itemSearchTerm = '';
+      }
+    },
+
+    /**
+     * A whole barcode in the search box adds its item as it arrives, so a
+     * scanner that sends no Enter still bills. Typed names and codes wait
+     * for Enter or a pick from the list.
+     */
+    async addScannedBarcode(code: string) {
+      const request = ++this.barcodeScanRequest;
+      const barcode = code.trim();
+      if (!isFullBarcode(barcode, fyo.singles.POSSettings)) {
+        return;
+      }
+
+      this.scanningBarcode = barcode;
+      try {
+        const scanned = await getScannedItem(barcode, this.itemQtyMap);
+        const isBarcode =
+          scanned &&
+          (scanned.isStockQuantity || scanned.item.barcode === barcode);
+        if (!isBarcode || request !== this.barcodeScanRequest) {
+          return;
+        }
+
+        const { item, quantity, isStockQuantity } = scanned;
+        await this.addItem(item, quantity, { isStockQuantity });
+        this.autoAddedBarcode = barcode;
+        // The box keeps the barcode; selected, the next scan replaces it.
+        const input = document.activeElement;
+        if (input instanceof HTMLInputElement && input.value.trim() === barcode) {
+          input.select();
+        }
+      } finally {
+        if (this.scanningBarcode === barcode) {
+          this.scanningBarcode = '';
+        }
       }
     },
 
