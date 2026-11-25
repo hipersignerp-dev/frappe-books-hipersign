@@ -1,0 +1,44 @@
+<div class="tk">
+  <header class="tk-head">
+    <div class="tk-hello">
+      <h1 class="tk-title"><span data-hello>Welcome</span></h1>
+      <p class="tk-sub" data-sub>Here's how the business is doing.</p>
+    </div>
+    <div class="tk-head-right">
+      <div class="tk-period" role="tablist" aria-label="Period">
+        <button data-period="today">Today</button>
+        <button data-period="week">Week</button>
+        <button data-period="month" class="on">Month</button>
+        <button data-period="quarter">Quarter</button>
+        <button data-period="year">Year</button>
+      </div>
+      <button class="tk-icon-btn" data-refresh title="Refresh" aria-label="Refresh">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <nav class="tk-actions" aria-label="Quick actions">
+    <a class="tk-act tk-act-primary" data-go="books:/pos"><span class="tk-act-ic">⌁</span>Open POS</a>
+    <a class="tk-act" data-go="form:Books Sales Invoice"><span class="tk-act-ic">＋</span>Sales Invoice</a>
+    <a class="tk-act" data-go="form:Books Purchase Invoice"><span class="tk-act-ic">＋</span>Purchase Invoice</a>
+    <a class="tk-act" data-go="form:Books Payment"><span class="tk-act-ic">₹</span>Payment</a>
+    <a class="tk-act" data-go="form:Product"><span class="tk-act-ic">◫</span>Add Product</a>
+    <a class="tk-act" data-go="form:Books Stock Movement"><span class="tk-act-ic">⇄</span>Stock Entry</a>
+    <a class="tk-act" data-go="form:Barcode Print"><span class="tk-act-ic">▥</span>Print Barcodes</a>
+  </nav>
+
+  <div class="tk-tabs" role="tablist">
+    <button data-tab="overview" class="on">Overview</button>
+    <button data-tab="sales">Sales</button>
+    <button data-tab="stock">Stock</button>
+    <button data-tab="purchase">Purchase</button>
+    <button data-tab="accounts">Accounts</button>
+    <button data-tab="customers">Customers</button>
+    <button data-tab="alerts">Alerts <span class="tk-badge" data-alert-count hidden>0</span></button>
+  </div>
+
+  <div class="tk-body" data-body>
+    <div class="tk-loading">Loading dashboard…</div>
+  </div>
+</div>
