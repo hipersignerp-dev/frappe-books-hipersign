@@ -31,6 +31,9 @@
       <POSHeaderActions
         :profile="posProfile as POSProfile"
         :enable-returns="enableReturns"
+        :can-check-stock="canCheckStock"
+        :checking-stock="checkingStock"
+        @check-stock="checkingStock = !checkingStock"
         @held="toggleModal('SavedInvoice', true)"
         @return="toggleModal('ReturnSalesInvoice', true)"
         @invoices="routeToSinvList"
@@ -59,11 +62,24 @@
     />
     <div v-else-if="!isMobile" class="flex min-h-0 flex-1">
       <main class="flex min-w-0 flex-1 flex-col">
+        <div
+          v-if="checkingStock"
+          class="mx-5 mt-4 flex items-center justify-between gap-3 rounded-lg bg-surface-blue-1 px-3 py-2 text-base text-ink-blue-7"
+          role="status"
+        >
+          <span>{{ t`Checking stock: scans show sizes and stock, and add nothing to the bill.` }}</span>
+          <FrappeButton
+            size="sm"
+            :label="t`Done`"
+            @click="checkingStock = false"
+          />
+        </div>
         <VariantStockPanel
           class="mt-4"
           :item-name="variantItem"
           :refresh-key="variantRefreshKey"
           @add-variant="addVariant"
+          @no-variants="showItemStock"
           @close="variantItem = ''"
         />
         <POSItemPicker
@@ -225,6 +241,8 @@ import POSHeaderActions from 'src/components/POS/POSHeaderActions.vue';
 import POSPriceActions from 'src/components/POS/POSPriceActions.vue';
 import SelectedItemTable from 'src/components/POS/SelectedItemTable.vue';
 import VariantStockPanel from 'src/components/POS/VariantStockPanel.vue';
+import { getField } from 'src/frappe/registry';
+import { printPOSReceipt } from 'src/utils/posPrint';
 import PaymentModal from './PaymentModal.vue';
 import KeyboardModal from './KeyboardModal.vue';
 import PriceListModal from './PriceListModal.vue';
@@ -383,9 +401,15 @@ export default defineComponent({
       expandedRow: undefined as string | undefined,
       variantItem: '' as string,
       variantRefreshKey: 0,
+      /** While on, scanning or picking an item shows its stock instead of billing it. */
+      checkingStock: false,
     };
   },
   computed: {
+    /** The site's items carry the product they are a colour and size of. */
+    canCheckStock(): boolean {
+      return !!getField('Item', 'product');
+    },
     layout(): POSLayout {
       const posUI =
         this.posProfile?.pos_ui || fyo.singles.POSSettings?.pos_ui;
@@ -789,8 +813,17 @@ export default defineComponent({
     async addItem(
       item: POSItem | undefined,
       quantity = 1,
-      addition: CartAddition = {}
+      addition: CartAddition = {},
+      /** Added from the variant panel, which bills even while checking stock. */
+      chosen = false
     ) {
+      if (item && this.checkingStock && !chosen) {
+        // Shown again when the same item is checked twice in a row.
+        this.variantItem = item.name;
+        this.variantRefreshKey++;
+        return;
+      }
+
       try {
         this.validateInvoice();
         if (!item) {
@@ -826,7 +859,20 @@ export default defineComponent({
         return;
       }
 
-      await this.addItem(item as POSItem);
+      await this.addItem(item as POSItem, 1, {}, true);
+    },
+    /** While checking stock, an item with no other sizes shows its own stock. */
+    showItemStock(name: string) {
+      if (!this.checkingStock) {
+        return;
+      }
+
+      const qty = this.itemQtyMap[name]?.availableQty ?? 0;
+      showToast({
+        id: POS_ITEM_TOAST_ID,
+        type: qty > 0 ? 'success' : 'warning',
+        message: qty > 0 ? t`${name}: ${qty} in stock` : t`${name}: out of stock`,
+      });
     },
     selectBatch(item: POSItem, quantity: number, addition: CartAddition) {
       this.selectedItemForBatch = item.name;
@@ -868,21 +914,42 @@ export default defineComponent({
         this.closeAllModals();
         await nextTick();
 
-        if (shouldPrint) {
-          await routeTo(
-            getPrintRoute(this.sinvDoc.schemaName, this.sinvDoc.name!)
-          );
-        }
+        // The sale is printed from the POS, so the next one can start meanwhile.
+        const sale = {
+          schemaName: this.sinvDoc.schemaName,
+          name: this.sinvDoc.name!,
+          posProfile: this.sinvDoc.pos_profile as string | undefined,
+        };
 
         await this.afterTransaction();
         await this.setItems();
         this.variantRefreshKey++;
+
+        if (shouldPrint) {
+          await this.printSale(sale);
+        }
       } catch (error) {
         showToast({
           type: 'error',
           message: getErrorMessage(error as Error),
         });
       }
+    },
+    /**
+     * Opens the print dialog for a finished sale over the POS. Without a POS
+     * print format, or when printing here fails, its print view opens instead.
+     */
+    async printSale(sale: { schemaName: string; name: string; posProfile?: string }) {
+      try {
+        // Phone browsers print a hidden frame poorly; they keep the print view.
+        if (!this.isMobile && (await printPOSReceipt(sale.name, sale.posProfile))) {
+          return;
+        }
+      } catch (error) {
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
+      }
+
+      await routeTo(getPrintRoute(sale.schemaName, sale.name));
     },
     /** Submits or pays the sale; its payments are named once the server says which. */
     async completeSale(pay: boolean) {

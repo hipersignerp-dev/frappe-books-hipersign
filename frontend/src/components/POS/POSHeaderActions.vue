@@ -23,6 +23,15 @@
       @click="$emit('invoices')"
     />
     <FrappeButton
+      v-if="canCheckStock"
+      icon-left="lucide-scan-search"
+      :label="t`Check stock`"
+      :variant="checkingStock ? 'solid' : 'subtle'"
+      :aria-pressed="checkingStock"
+      :tooltip="t`Scan to see stock without adding to the bill`"
+      @click="$emit('checkStock')"
+    />
+    <FrappeButton
       v-if="fyo.singles.AccountingSettings?.enable_item_enquiry"
       icon-left="lucide-square-pen"
       :label="t`Item enquiry`"
@@ -40,12 +49,19 @@ import { POSProfile } from 'models/baseModels/POSProfile/PosProfile';
 import { fyo } from 'src/initFyo';
 import POSActionButton from './POSActionButton.vue';
 
-defineProps<{ profile?: POSProfile | null; enableReturns?: boolean }>();
+defineProps<{
+  profile?: POSProfile | null;
+  enableReturns?: boolean;
+  /** Shown where the site's items have colours and sizes to look up. */
+  canCheckStock?: boolean;
+  checkingStock?: boolean;
+}>();
 defineEmits<{
   held: [];
   return: [];
   invoices: [];
   enquiry: [];
+  checkStock: [];
   closeShift: [];
 }>();
 </script>

@@ -40,7 +40,7 @@
           </span>
           <span
             class="shrink-0 text-sm"
-            :class="variant.qty > 0 ? 'text-ink-green-3' : 'text-ink-red-4'"
+            :class="variant.qty > 0 ? 'text-ink-green-7' : 'text-ink-red-7'"
           >
             {{ variant.qty > 0 ? t`${variant.qty} in stock` : t`Out of stock` }}
           </span>
@@ -81,7 +81,7 @@ export default defineComponent({
     refreshKey: { type: Number, default: 0 },
     disableOutOfStock: { type: Boolean, default: false },
   },
-  emits: ['addVariant', 'close'],
+  emits: ['addVariant', 'close', 'noVariants'],
   data() {
     return {
       product: '' as string,
@@ -121,6 +121,7 @@ export default defineComponent({
       if (!data?.product) {
         this.product = '';
         this.variants = [];
+        this.$emit('noVariants', this.itemName);
         return;
       }
 
@@ -142,6 +143,9 @@ export default defineComponent({
 
       this.product = data.product;
       this.variants = rows;
+      if (rows.length <= 1) {
+        this.$emit('noVariants', this.itemName);
+      }
     },
   },
 });

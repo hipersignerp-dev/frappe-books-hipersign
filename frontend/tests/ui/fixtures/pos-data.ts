@@ -113,8 +113,47 @@ const records: Record<string, Row[]> = {
   ],
 };
 
+/** With `?variants`, items are colours and sizes of a product, as on a Hipersign site. */
+const withVariants = new URLSearchParams(window.location.search).has('variants');
+
+/** The mug's colours and sizes, each one of the listed items. */
+const mugVariants: Record<string, string> = {
+  'White|Small': items[2].name,
+  'White|Large': items[3].name,
+  'Blue|Small': items[4].name,
+  'Blue|Large': items[5].name,
+};
+
+/** What the site's variant_stock API answers for an item of the mug. */
+function getVariantStock(item: string) {
+  const isMug = Object.values(mugVariants).includes(item);
+  if (!isMug) {
+    return { item, product: null, colours: [], sizes: [], grid: {}, items: {} };
+  }
+
+  return {
+    item,
+    product: 'Stoneware Mug',
+    colours: ['White', 'Blue'],
+    sizes: ['Small', 'Large'],
+    grid: { 'White|Small': 4, 'White|Large': 0, 'Blue|Small': 2, 'Blue|Large': 7 },
+    items: mugVariants,
+  };
+}
+
 export async function preparePOSData() {
-  await loadFrappeFixture(answer);
+  await loadFrappeFixture(
+    answer,
+    withVariants
+      ? {
+          'Books Item': [
+            { fieldname: 'product', fieldtype: 'Data', label: 'Product' },
+            { fieldname: 'colour', fieldtype: 'Data', label: 'Colour' },
+            { fieldname: 'size', fieldtype: 'Data', label: 'Size' },
+          ],
+        }
+      : {}
+  );
   // New settings documents, which the fixture fills in below.
   for (const name of getSingleSchemaNames()) {
     newFrappeDoc(name);
@@ -167,6 +206,11 @@ function answer(path: string, body: Row, params: Row): unknown {
     get_pos_profile: () => null,
     get_stock_location: () => inventory,
     get_sale_shortfalls: () => [],
+    get_html_and_style: () => ({
+      html: `<h1>Receipt ${body.name}</h1>`,
+      style: 'h1 { font-size: 12px; }',
+    }),
+    variant_stock: () => (withVariants ? getVariantStock(body.item) : null),
   };
   const answerMethod = methods[method] ?? methods[method.split('.').pop()!];
   if (answerMethod) {
