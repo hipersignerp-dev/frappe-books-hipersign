@@ -40,6 +40,7 @@
       <MobileDesk v-else-if="isMobile" />
       <Desk v-else class="flex-1" />
       <DialogSheet v-if="isMobile" />
+      <ProductLabelsDialog />
     </div>
   </FrappeUIProvider>
 </template>
@@ -49,6 +50,7 @@ import { frappeModels, getRegionalFrappeModels } from 'models';
 import type { SystemSettings } from 'models/baseModels/SystemSettings/SystemSettings';
 import { ModelNameEnum } from 'models/types';
 import DialogSheet from 'src/mobile/DialogSheet.vue';
+import ProductLabelsDialog from 'src/components/ProductLabelsDialog.vue';
 import MobileDesk from 'src/mobile/MobileDesk.vue';
 import Desk from 'src/pages/Desk.vue';
 import SetupWizard from 'src/pages/SetupWizard/SetupWizard.vue';
@@ -89,6 +91,7 @@ export default defineComponent({
     FrappeAlert,
     Desk,
     DialogSheet,
+    ProductLabelsDialog,
     MobileDesk,
     FrappeSpinner,
     FrappeUIProvider,

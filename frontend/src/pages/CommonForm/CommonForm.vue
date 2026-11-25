@@ -64,6 +64,13 @@
             :tooltip="t`Open print view`"
             @click="openPrintView"
           />
+          <FrappeButton
+            v-for="action of buttonActions"
+            :key="action.label"
+            :icon-left="action.icon"
+            :label="action.label"
+            @click="runButtonAction(action)"
+          />
           <DropdownWithActions
             v-for="group of groupedActions"
             :key="group.label"
@@ -167,6 +174,7 @@ import { handleErrorWithDialog } from 'src/errorHandling';
 import { getSchema } from 'src/frappe/registry';
 import { useBooksDoc } from 'src/frappe/useBooksDoc';
 import { getErrorMessage } from 'src/utils';
+import { showToast } from 'src/utils/interactive';
 import { loadDocPermissions } from 'src/utils/doc';
 import { shortcutsKey } from 'src/utils/injectionKeys';
 import { docsPathMap } from 'src/utils/misc';
@@ -381,12 +389,27 @@ export default defineComponent({
         label: value,
       }));
     },
+    /** Actions shown as their own header buttons, such as a product's Print barcodes. */
+    buttonActions(): Action[] {
+      if (!this.hasDoc) {
+        return [];
+      }
+
+      return getGroupedActionsForDoc(this.doc)
+        .flatMap((group) => group.actions)
+        .filter((action) => action.button);
+    },
     groupedActions(): ActionGroup[] {
       if (!this.hasDoc) {
         return [];
       }
 
-      const groups = getGroupedActionsForDoc(this.doc);
+      const groups = getGroupedActionsForDoc(this.doc)
+        .map((group) => ({
+          ...group,
+          actions: group.actions.filter((action) => !action.button),
+        }))
+        .filter((group) => group.actions.length);
       const more = groups.find(({ group }) => !group)?.actions ?? [];
       return [
         ...groups.filter(({ group }) => group),
@@ -459,6 +482,13 @@ export default defineComponent({
     },
     async setExchangeRate(exchangeRate: number) {
       await this.doc.set('exchange_rate', exchangeRate);
+    },
+    async runButtonAction(action: Action) {
+      try {
+        await action.action(this.doc, this.$router);
+      } catch (error) {
+        showToast({ type: 'error', message: getErrorMessage(error as Error) });
+      }
     },
     async openPrintView() {
       await routeTo(getPrintRoute(this.doc.schemaName, this.doc.name!));

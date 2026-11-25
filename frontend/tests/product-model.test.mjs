@@ -51,3 +51,16 @@ test('a site without the Product DocType starts as before and offers no Products
   assert.equal(getSchema('Product'), undefined);
   assert.ok(getSchema('Item'));
 });
+
+test('a saved product with variants offers Print barcodes as its own button', async () => {
+  stubFrappe(({ body }) => ({ message: getBooksMeta(body.doctypes) }));
+  registerFrappeModels(frappeModels);
+  await loadFrappeDocTypes();
+
+  const [action] = frappeModels.Product.getActions({ t: (s, ...v) => String.raw(s, ...v) });
+  assert.equal(action.label, 'Print barcodes');
+  assert.equal(action.button, true);
+  assert.equal(action.condition({ notInserted: true, variants: [{}] }), false);
+  assert.equal(action.condition({ notInserted: false, variants: [] }), false);
+  assert.equal(action.condition({ notInserted: false, variants: [{ item: 'A' }] }), true);
+});

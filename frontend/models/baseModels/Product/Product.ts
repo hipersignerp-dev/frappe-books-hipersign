@@ -1,5 +1,7 @@
-import { ListViewSettings } from 'fyo/model/types';
+import { Fyo } from 'fyo';
+import { Action, ListViewSettings } from 'fyo/model/types';
 import { FrappeDoc } from 'src/frappe/document';
+import { openProductLabels } from 'src/utils/productLabelsState';
 
 /** One colour and size of a product, as the Item it made. */
 export class ProductVariant extends FrappeDoc {
@@ -21,6 +23,21 @@ export class Product extends FrappeDoc {
   };
 
   static override rowModels = { variants: ProductVariant };
+
+  static getActions(fyo: Fyo): Action[] {
+    return [
+      {
+        label: fyo.t`Print barcodes`,
+        icon: 'lucide-barcode',
+        button: true,
+        condition: (doc) =>
+          !doc.notInserted &&
+          Array.isArray(doc.variants) &&
+          (doc.variants as unknown[]).length > 0,
+        action: (doc) => openProductLabels(doc),
+      },
+    ];
+  }
 
   static getListViewSettings(): ListViewSettings {
     return {

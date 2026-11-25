@@ -205,6 +205,8 @@ export function getActionsForDoc(doc?: FrappeDoc): Action[] {
         theme: d.theme,
         action: d.action,
         nextStep: d.nextStep,
+        button: d.button,
+        icon: d.icon,
       };
     });
 }

@@ -74,6 +74,9 @@ export interface Action {
   theme?: 'gray' | 'red';
   /** Phones show this label on a bottom-bar button that runs the action. */
   nextStep?: (doc: FrappeDoc) => string;
+  /** Shown as its own button in the form header, not in a menu. */
+  button?: boolean;
+  icon?: string;
 }
 
 export interface RenderData {
