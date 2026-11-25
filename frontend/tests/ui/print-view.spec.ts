@@ -53,19 +53,34 @@ test('Save as PDF downloads the PDF Frappe makes', async ({ page }) => {
   expect(params.get('format')).toBe('Business - Sales Invoice');
 });
 
-test('Print opens Frappe print view, which prints', async ({ page }) => {
-  await page
-    .context()
-    .route(/\/printview\?/, (route) => route.fulfill({ body: '<html></html>' }));
+test('Print opens the print dialog from this tab, in no new tab', async ({
+  page,
+}) => {
+  // The frame's print() is recorded rather than opening the dialog.
+  await page.evaluate(() => {
+    const printed: string[] = [];
+    (window as any).printed = printed;
+    new MutationObserver(() => {
+      const frame = document.querySelector<HTMLIFrameElement>('iframe[title="print"]');
+      if (frame?.contentWindow && !(frame as any).patched) {
+        (frame as any).patched = true;
+        frame.contentWindow.print = () => {
+          printed.push(frame.contentDocument!.body.textContent ?? '');
+          frame.contentWindow!.dispatchEvent(new Event('afterprint'));
+        };
+      }
+    }).observe(document.body, { childList: true });
+  });
+  let popups = 0;
+  page.on('popup', () => popups++);
 
-  const popup = page.waitForEvent('popup');
   await page.getByRole('button', { name: 'Print', exact: true }).click();
 
-  const params = new URL((await popup).url()).searchParams;
-  expect(params.get('doctype')).toBe('Books Sales Invoice');
-  expect(params.get('format')).toBe('Business - Sales Invoice');
-  expect(params.get('trigger_print')).toBe('1');
-  await expect(page.getByText('Print dialog opened')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).printed))
+    .toEqual([NAME]);
+  expect(popups).toBe(0);
+  await expect(page.locator('iframe[title="print"]')).toHaveCount(0);
 });
 
 test.describe('on a phone that can share files', () => {

@@ -136,6 +136,7 @@ import MobileFooter from 'src/mobile/MobileFooter.vue';
 import { getAllDocuments, getValue } from 'src/frappe/api';
 import { getSchema } from 'src/frappe/registry';
 import { getFrappeDoc, newFrappeDoc } from 'src/frappe/documents';
+import { printHtmlInPage } from 'src/utils/browser';
 import { showToast } from 'src/utils/interactive';
 import {
   canSharePDF,
@@ -403,9 +404,19 @@ export default defineComponent({
         () => getPDF(this.doctype, this.name, templateName)
       );
     },
-    openPrintDialog() {
+    async openPrintDialog() {
       if (!this.templateName) {
         return;
+      }
+
+      // The page shown here prints from this tab; phones keep Frappe's print view.
+      if (this.printDocument && !this.isMobile) {
+        try {
+          await printHtmlInPage(this.printDocument);
+          return;
+        } catch (error) {
+          console.error(error);
+        }
       }
 
       const opened = openPrintView(this.doctype, this.name, this.templateName);
