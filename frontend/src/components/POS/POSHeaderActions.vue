@@ -26,9 +26,7 @@
       v-if="canCheckStock"
       icon-left="lucide-scan-search"
       :label="t`Check stock`"
-      :variant="checkingStock ? 'solid' : 'subtle'"
-      :aria-pressed="checkingStock"
-      :tooltip="t`Scan to see stock without adding to the bill`"
+      :tooltip="t`Scan to see stock of all sizes without adding to the bill`"
       @click="$emit('checkStock')"
     />
     <FrappeButton
@@ -54,7 +52,6 @@ defineProps<{
   enableReturns?: boolean;
   /** Shown where the site's items have colours and sizes to look up. */
   canCheckStock?: boolean;
-  checkingStock?: boolean;
 }>();
 defineEmits<{
   held: [];

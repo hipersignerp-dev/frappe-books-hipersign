@@ -52,20 +52,8 @@
 
 <script lang="ts">
 import { Button as FrappeButton } from 'frappe-ui';
-import { call } from 'src/web/api';
+import { getVariantStock, type VariantRow } from 'src/utils/variantStock';
 import { defineComponent } from 'vue';
-
-/** What the site's `variant_stock` API returns for an item's product. */
-type VariantStock = {
-  item: string | null;
-  product: string | null;
-  colours: string[];
-  sizes: string[];
-  grid: Record<string, number>;
-  items: Record<string, string>;
-};
-
-type VariantRow = { item: string; label: string; qty: number };
 
 /**
  * Every colour and size of the scanned item's product with its stock.
@@ -106,44 +94,15 @@ export default defineComponent({
         return;
       }
 
-      let data: VariantStock | undefined;
-      try {
-        data = await call<VariantStock>('variant_stock', { item: this.itemName });
-      } catch {
-        data = undefined;
-      }
-
+      const stock = await getVariantStock(this.itemName);
       // A later scan's answer wins over an earlier one that came back late.
       if (request !== this.request) {
         return;
       }
 
-      if (!data?.product) {
-        this.product = '';
-        this.variants = [];
-        this.$emit('noVariants', this.itemName);
-        return;
-      }
-
-      const rows: VariantRow[] = [];
-      for (const colour of data.colours) {
-        for (const size of data.sizes) {
-          const key = `${colour}|${size}`;
-          const item = data.items[key];
-          if (!item) {
-            continue;
-          }
-
-          const label = [colour, size]
-            .filter((part) => part && part !== '-')
-            .join(' · ');
-          rows.push({ item, label: label || item, qty: Number(data.grid[key] ?? 0) });
-        }
-      }
-
-      this.product = data.product;
-      this.variants = rows;
-      if (rows.length <= 1) {
+      this.product = stock?.product ?? '';
+      this.variants = stock?.variants ?? [];
+      if (this.variants.length <= 1) {
         this.$emit('noVariants', this.itemName);
       }
     },

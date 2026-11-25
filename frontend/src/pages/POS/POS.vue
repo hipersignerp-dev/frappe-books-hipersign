@@ -32,8 +32,7 @@
         :profile="posProfile as POSProfile"
         :enable-returns="enableReturns"
         :can-check-stock="canCheckStock"
-        :checking-stock="checkingStock"
-        @check-stock="checkingStock = !checkingStock"
+        @check-stock="toggleModal('CheckStock', true)"
         @held="toggleModal('SavedInvoice', true)"
         @return="toggleModal('ReturnSalesInvoice', true)"
         @invoices="routeToSinvList"
@@ -62,24 +61,11 @@
     />
     <div v-else-if="!isMobile" class="flex min-h-0 flex-1">
       <main class="flex min-w-0 flex-1 flex-col">
-        <div
-          v-if="checkingStock"
-          class="mx-5 mt-4 flex items-center justify-between gap-3 rounded-lg bg-surface-blue-1 px-3 py-2 text-base text-ink-blue-7"
-          role="status"
-        >
-          <span>{{ t`Checking stock: scans show sizes and stock, and add nothing to the bill.` }}</span>
-          <FrappeButton
-            size="sm"
-            :label="t`Done`"
-            @click="checkingStock = false"
-          />
-        </div>
         <VariantStockPanel
           class="mt-4"
           :item-name="variantItem"
           :refresh-key="variantRefreshKey"
           @add-variant="addVariant"
-          @no-variants="showItemStock"
           @close="variantItem = ''"
         />
         <POSItemPicker
@@ -195,6 +181,12 @@
       :open-modal="openPriceListModal"
       @toggle-modal="toggleModal('PriceList', false)"
     />
+    <CheckStockModal
+      :open-modal="openCheckStockModal"
+      :item-qty-map="itemQtyMap"
+      @toggle-modal="toggleModal('CheckStock', false)"
+    />
+
     <ItemEnquiryModal
       :open-modal="openItemEnquiryModal"
       :customer="sinvDoc.party"
@@ -248,6 +240,7 @@ import KeyboardModal from './KeyboardModal.vue';
 import PriceListModal from './PriceListModal.vue';
 import CouponCodeModal from './CouponCodeModal.vue';
 import ItemEnquiryModal from './ItemEnquiryModal.vue';
+import CheckStockModal from './CheckStockModal.vue';
 import SavedInvoiceModal from './SavedInvoiceModal.vue';
 import OpenPOSShiftModal from './OpenPOSShiftModal.vue';
 import ClosePOSShiftModal from './ClosePOSShiftModal.vue';
@@ -337,6 +330,7 @@ export default defineComponent({
     PriceListModal,
     CouponCodeModal,
     ItemEnquiryModal,
+    CheckStockModal,
     SavedInvoiceModal,
     OpenPOSShiftModal,
     ClosePOSShiftModal,
@@ -377,6 +371,7 @@ export default defineComponent({
       openKeyboardModal: false,
       openPriceListModal: false,
       openItemEnquiryModal: false,
+      openCheckStockModal: false,
       openCouponCodeModal: false,
       openShiftCloseModal: false,
       openSavedInvoiceModal: false,
@@ -406,8 +401,6 @@ export default defineComponent({
       variantItem: '' as string,
       variantRefreshKey: 0,
       /** While on, scanning or picking an item shows its stock instead of billing it. */
-      checkingStock: false,
-      stockCheckRequest: 0,
       barcodeScanRequest: 0,
       scanningBarcode: '',
       autoAddedBarcode: '',
@@ -625,10 +618,6 @@ export default defineComponent({
     async handleItemSearch(searchTerm: string | null, addItem = false) {
       const code = searchTerm ?? '';
       this.itemSearchTerm = code;
-      if (this.checkingStock && !addItem) {
-        await this.checkStockOf(code);
-        return;
-      }
 
       if (!addItem) {
         if (code.trim() !== this.autoAddedBarcode) {
@@ -696,30 +685,6 @@ export default defineComponent({
         if (this.scanningBarcode === barcode) {
           this.scanningBarcode = '';
         }
-      }
-    },
-
-    /**
-     * While checking stock, a whole barcode, code or item name in the search
-     * box shows its sizes and stock as it arrives, whether or not the scanner
-     * ends it with Enter.
-     */
-    async checkStockOf(code: string) {
-      const request = ++this.stockCheckRequest;
-      if (code.trim().length < 3) {
-        return;
-      }
-
-      const scanned = await getScannedItem(code, this.itemQtyMap);
-      if (!scanned || request !== this.stockCheckRequest || !this.checkingStock) {
-        return;
-      }
-
-      await this.addItem(scanned.item);
-      // The box keeps what was typed; selected, the next scan replaces it.
-      const input = document.activeElement;
-      if (input instanceof HTMLInputElement && input.value.trim() === code.trim()) {
-        input.select();
       }
     },
 
@@ -906,17 +871,8 @@ export default defineComponent({
     async addItem(
       item: POSItem | undefined,
       quantity = 1,
-      addition: CartAddition = {},
-      /** Added from the variant panel, which bills even while checking stock. */
-      chosen = false
+      addition: CartAddition = {}
     ) {
-      if (item && this.checkingStock && !chosen) {
-        // Shown again when the same item is checked twice in a row.
-        this.variantItem = item.name;
-        this.variantRefreshKey++;
-        return;
-      }
-
       try {
         this.validateInvoice();
         if (!item) {
@@ -952,21 +908,9 @@ export default defineComponent({
         return;
       }
 
-      await this.addItem(item as POSItem, 1, {}, true);
+      await this.addItem(item as POSItem, 1, {});
     },
     /** While checking stock, an item with no other sizes shows its own stock. */
-    showItemStock(name: string) {
-      if (!this.checkingStock) {
-        return;
-      }
-
-      const qty = this.itemQtyMap[name]?.availableQty ?? 0;
-      showToast({
-        id: POS_ITEM_TOAST_ID,
-        type: qty > 0 ? 'success' : 'warning',
-        message: qty > 0 ? t`${name}: ${qty} in stock` : t`${name}: out of stock`,
-      });
-    },
     selectBatch(item: POSItem, quantity: number, addition: CartAddition) {
       this.selectedItemForBatch = item.name;
       this.pendingBatchItem = { item, quantity, addition };

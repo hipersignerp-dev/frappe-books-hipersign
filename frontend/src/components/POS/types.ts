@@ -25,6 +25,7 @@ export const modalNames = [
   'CouponCode',
   'PriceList',
   'ItemEnquiry',
+  'CheckStock',
   'ReturnSalesInvoice',
   'BatchSelection',
 ] as const;
