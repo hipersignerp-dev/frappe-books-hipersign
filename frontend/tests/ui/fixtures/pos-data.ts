@@ -141,6 +141,13 @@ function getVariantStock(item: string) {
   };
 }
 
+if (withVariants) {
+  // The mug's sizes carry Books' 12-digit barcodes, as labels print them.
+  items.slice(2).forEach((item, index) => {
+    Object.assign(item, { barcode: `20000000030${index + 1}` });
+  });
+}
+
 export async function preparePOSData() {
   await loadFrappeFixture(
     answer,

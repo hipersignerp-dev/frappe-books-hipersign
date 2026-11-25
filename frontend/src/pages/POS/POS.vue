@@ -403,6 +403,7 @@ export default defineComponent({
       variantRefreshKey: 0,
       /** While on, scanning or picking an item shows its stock instead of billing it. */
       checkingStock: false,
+      stockCheckRequest: 0,
     };
   },
   computed: {
@@ -617,6 +618,11 @@ export default defineComponent({
     async handleItemSearch(searchTerm: string | null, addItem = false) {
       const code = searchTerm ?? '';
       this.itemSearchTerm = code;
+      if (this.checkingStock && !addItem) {
+        await this.checkStockOf(code);
+        return;
+      }
+
       const scanned = addItem && (await getScannedItem(code, this.itemQtyMap));
       if (!scanned) {
         return;
@@ -627,6 +633,30 @@ export default defineComponent({
       // Text typed or scanned while the item was added stays.
       if (this.itemSearchTerm === code) {
         this.itemSearchTerm = '';
+      }
+    },
+
+    /**
+     * While checking stock, a whole barcode, code or item name in the search
+     * box shows its sizes and stock as it arrives, whether or not the scanner
+     * ends it with Enter.
+     */
+    async checkStockOf(code: string) {
+      const request = ++this.stockCheckRequest;
+      if (code.trim().length < 3) {
+        return;
+      }
+
+      const scanned = await getScannedItem(code, this.itemQtyMap);
+      if (!scanned || request !== this.stockCheckRequest || !this.checkingStock) {
+        return;
+      }
+
+      await this.addItem(scanned.item);
+      // The box keeps what was typed; selected, the next scan replaces it.
+      const input = document.activeElement;
+      if (input instanceof HTMLInputElement && input.value.trim() === code.trim()) {
+        input.select();
       }
     },
 
