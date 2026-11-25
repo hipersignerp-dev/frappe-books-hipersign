@@ -1,4 +1,5 @@
 // Tokyo business dashboard. Data: /api/method/tokyo_dashboard (Server Script "Tokyo Dashboard API").
+// Source: github.com/hipersignerp-dev/frappe-books-hipersign, branch tokyo-workspace
 (function () {
   const root = root_element;
   const $ = (sel) => root.querySelector(sel);
@@ -60,7 +61,6 @@
     file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
     undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
     layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
-    percent: '<path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>',
     star: '<path d="m12 2 3 7h7l-5.5 4.5 2 7.5-6.5-4.5L5.5 21l2-7.5L2 9h7z"/>',
     x: '<circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/>',
     check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>',
@@ -77,7 +77,8 @@
   // ---------- navigation ----------
   function go(target) {
     if (!target) return;
-    const [kind, rest] = [target.slice(0, target.indexOf(":")), target.slice(target.indexOf(":") + 1)];
+    const i = target.indexOf(":");
+    const kind = target.slice(0, i), rest = target.slice(i + 1);
     if (kind === "form") return frappe.new_doc(rest);
     if (kind === "books") return (window.location.href = "/books" + rest);
     if (kind === "report") return frappe.set_route("query-report", rest);
@@ -362,7 +363,7 @@
         { label: "Purchase Bills", value: count(c.purchase_invoices), foot: per(), icon: "receipt", color: "slate", go: L("Books Purchase Invoice", { docstatus: 1 }) },
         { label: "Pending Receipts", value: count(c.pending_receipts), foot: "Bought, not yet received", icon: "download", color: "amber", go: L("Books Purchase Invoice", { docstatus: 1, stock_not_transferred: [">", 0] }) },
         { label: "Suppliers", value: count(c.suppliers), foot: "Active parties", icon: "users", color: "violet", go: L("Books Party", { role: ["in", ["Supplier", "Both"]] }) },
-        { label: "Supplier Outstanding", value: money(k.payable), foot: `${count(c.unpaid_purchases)} unpaid bills`, icon: "outbox", color: "amber", go: "report:Accounts Payable" },
+        { label: "Supplier Outstanding", value: money(k.payable), foot: plural(c.unpaid_purchases, "unpaid bill", "unpaid bills"), icon: "outbox", color: "amber", go: "report:Accounts Payable" },
         { label: "Overdue Supplier Bills", value: count(c.overdue_purchases), foot: c.overdue_purchases ? money(c.overdue_purchases_amount) : `None over ${d.settings.overdue_after_days} days`, icon: "clock", color: "red", warn: c.overdue_purchases > 0, go: L("Books Purchase Invoice", { docstatus: 1, outstanding_amount: [">", 0] }) },
         { label: "Purchase Returns", value: money(c.purchase_returns), foot: per(), icon: "undo", color: "red", go: L("Books Purchase Invoice", { docstatus: 1, return_against: ["is", "set"] }) },
         { label: "Draft Purchases", value: count(c.draft_purchases), foot: "Not yet submitted", icon: "file", color: "slate", go: L("Books Purchase Invoice", { docstatus: 0 }) },
@@ -429,8 +430,7 @@
     if (!d) return;
     pending.length = 0;
     body.innerHTML = VIEWS[state.tab](d);
-    const width = body.clientWidth;
-    pending.forEach(([id, fn]) => { const el = root.querySelector("#" + id); if (el) fn(el, width); });
+    pending.forEach(([id, fn]) => { const el = root.querySelector("#" + id); if (el) fn(el); });
     const active = alertDefs(d).filter((a) => num(a.n) > 0 && a.t !== "Leads to follow up").length;
     const badge = $("[data-alert-count]");
     badge.hidden = !active;
@@ -483,9 +483,10 @@
 
   // tooltips for chart marks
   let tip;
+  const hideTip = () => { if (tip) tip.style.display = "none"; };
   root.addEventListener("mousemove", (e) => {
     const m = e.target.closest && e.target.closest("[data-tip]");
-    if (!m) { if (tip) tip.style.display = "none"; return; }
+    if (!m) return hideTip();
     if (!tip) {
       tip = document.createElement("div");
       tip.style.cssText = "position:fixed;z-index:9999;pointer-events:none;background:#111827;color:#fff;font-size:11.5px;padding:6px 9px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);white-space:nowrap;font-family:inherit";
@@ -496,7 +497,7 @@
     tip.style.left = e.clientX + 12 + "px";
     tip.style.top = e.clientY - 30 + "px";
   });
-  root.addEventListener("mouseleave", () => { if (tip) tip.style.display = "none"; });
+  window.addEventListener("scroll", hideTip, { passive: true });
 
   let resizeTimer;
   window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 200); });
