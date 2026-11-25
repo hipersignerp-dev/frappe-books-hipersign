@@ -71,6 +71,42 @@ export async function printHtml(html: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Prints a page from a hidden frame in this one: the print dialog opens over
+ * the current screen, with no new tab or window, and the frame goes after.
+ */
+export async function printHtmlInPage(html: string): Promise<void> {
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.title = 'print';
+  Object.assign(frame.style, {
+    position: 'fixed',
+    right: '0',
+    bottom: '0',
+    width: '0',
+    height: '0',
+    border: '0',
+    visibility: 'hidden',
+  });
+  document.body.appendChild(frame);
+  const view = frame.contentWindow!;
+  const remove = () => frame.remove();
+  try {
+    view.document.open();
+    view.document.write(html);
+    view.document.close();
+    await waitForPrintContent(view);
+    view.addEventListener('afterprint', () => setTimeout(remove), { once: true });
+    view.focus();
+    view.print();
+    // Browsers whose print() returns before the dialog closes still remove it.
+    setTimeout(remove, 60_000);
+  } catch (error) {
+    remove();
+    throw error;
+  }
+}
+
 async function printPopupWhenReady(popup: Window) {
   await waitForPrintContent(popup);
   if (popup.closed) {
