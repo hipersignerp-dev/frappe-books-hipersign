@@ -38,11 +38,27 @@
             :unpaid-title="t`Unpaid purchases`"
             :period="period"
           />
+          <!-- Profit, stock and cash come from the site's business summary;
+            a site without it shows none of these. -->
+          <div v-show="hasSummary" class="contents">
+            <BusinessKpis
+              :period="period"
+              @available="(value) => (hasSummary = value)"
+            />
+          </div>
         </div>
+        <template v-if="hasSummary">
+          <div class="border-t border-outline-gray-2 max-md:hidden" />
+          <SalesPurchases class="h-64 md:h-72" :period="period" />
+        </template>
         <!-- The charts total the ledger. -->
         <template v-if="canRead.ledger">
           <div class="border-t border-outline-gray-2 max-md:hidden" />
           <Cashflow class="h-64 md:h-72" :period="period" />
+          <template v-if="hasSummary">
+            <div class="border-t border-outline-gray-2 max-md:hidden" />
+            <BusinessLists :period="period" />
+          </template>
           <div class="border-t border-outline-gray-2 max-md:hidden" />
           <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
             <ProfitAndLoss class="h-64 min-w-0 md:h-80" :period="period" />
@@ -58,12 +74,15 @@
 import { ScrollArea as FrappeScrollArea } from 'frappe-ui';
 import { ModelNameEnum } from 'models/types';
 import PageHeader from 'src/components/PageHeader.vue';
+import BusinessKpis from './BusinessKpis.vue';
+import BusinessLists from './BusinessLists.vue';
 import Cashflow from './Cashflow.vue';
 import Expenses from './Expenses.vue';
 import InvoiceCards from './InvoiceCards.vue';
 import MobileCreateMenu from './MobileCreateMenu.vue';
 import PeriodSelector from './PeriodSelector.vue';
 import ProfitAndLoss from './ProfitAndLoss.vue';
+import SalesPurchases from './SalesPurchases.vue';
 import { fyo } from 'src/initFyo';
 import { docsPathRef } from 'src/utils/refs';
 import { isMobile } from 'src/utils/viewport';
@@ -79,6 +98,9 @@ export default {
     InvoiceCards,
     MobileCreateMenu,
     PeriodSelector,
+    BusinessKpis,
+    BusinessLists,
+    SalesPurchases,
   },
   setup() {
     const canRead = {
@@ -89,7 +111,7 @@ export default {
     return { isMobile, canRead };
   },
   data() {
-    return { period: 'This Year' };
+    return { period: 'This Year', hasSummary: false };
   },
   activated() {
     docsPathRef.value = 'books/dashboard';
