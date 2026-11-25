@@ -1,0 +1,44 @@
+[
+ {
+  "name": "Tokyo Books Editor - SalesInvoice",
+  "dt": "Books Sales Invoice",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/SalesInvoice/\";\n  const settings = (frappe.listview_settings[\"Books Sales Invoice\"] = frappe.listview_settings[\"Books Sales Invoice\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ },
+ {
+  "name": "Tokyo Books Editor - PurchaseInvoice",
+  "dt": "Books Purchase Invoice",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/PurchaseInvoice/\";\n  const settings = (frappe.listview_settings[\"Books Purchase Invoice\"] = frappe.listview_settings[\"Books Purchase Invoice\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ },
+ {
+  "name": "Tokyo Books Editor - Payment",
+  "dt": "Books Payment",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/Payment/\";\n  const settings = (frappe.listview_settings[\"Books Payment\"] = frappe.listview_settings[\"Books Payment\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ },
+ {
+  "name": "Tokyo Books Editor - StockMovement",
+  "dt": "Books Stock Movement",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/StockMovement/\";\n  const settings = (frappe.listview_settings[\"Books Stock Movement\"] = frappe.listview_settings[\"Books Stock Movement\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ },
+ {
+  "name": "Tokyo Books Editor - Party",
+  "dt": "Books Party",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/Party/\";\n  const settings = (frappe.listview_settings[\"Books Party\"] = frappe.listview_settings[\"Books Party\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ },
+ {
+  "name": "Tokyo Books Editor - Item",
+  "dt": "Books Item",
+  "view": "List",
+  "enabled": 1,
+  "script": "// Tokyo: list stays in the desk; New and opening a record use the Books editor,\n// which fills accounts, amounts and taxes (the plain desk form cannot).\n(function () {\n  const BOOKS = \"/books/edit/Item/\";\n  const settings = (frappe.listview_settings[\"Books Item\"] = frappe.listview_settings[\"Books Item\"] || {});\n  settings.primary_action = () => { window.location.href = BOOKS + \"new\"; };\n  settings.get_form_link = (doc) => BOOKS + encodeURIComponent(doc.name);\n})();\n"
+ }
+]
