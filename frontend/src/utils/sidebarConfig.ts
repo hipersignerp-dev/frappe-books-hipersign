@@ -104,6 +104,12 @@ function getInventorySidebar(): SidebarRoot[] {
       route: '/list/StockMovement',
       items: [
         {
+          label: t`Products`,
+          name: 'products',
+          route: '/list/Product',
+          schemaName: 'Product',
+        },
+        {
           label: t`Stock Movement`,
           name: 'stock-movement',
           route: '/list/StockMovement',

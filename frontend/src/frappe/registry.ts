@@ -8,6 +8,7 @@ import {
   getFrappeModels,
   isFrappeBacked,
   setDocType,
+  unregisterFrappeModel,
   type FrappeDocType,
   type FrappeModel,
 } from './doctypes';
@@ -146,7 +147,13 @@ function setDocTypes(
 ) {
   const byName = new Map(metas.map((meta) => [meta.name, meta]));
   for (const [schemaName, Model] of models) {
-    const meta = byName.get(Model.doctype)!;
+    const meta = byName.get(Model.doctype);
+    // The server leaves out a site's own doctype that this site does not have.
+    if (!meta) {
+      unregisterFrappeModel(schemaName);
+      continue;
+    }
+
     const docType = toDocType(meta, schemaName, Model, placements[meta.name]);
     docType.tables = getTables(meta, byName, Model, placements);
     setDocType(schemaName, docType);

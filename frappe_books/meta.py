@@ -11,5 +11,7 @@ def get_books_meta(doctypes: list[str]) -> dict:
 	`metas` holds what Frappe's getdoctype sends for each doctype, its tables' meta included, once
 	each. `placements` holds where Books Custom Forms put custom fields.
 	"""
-	metas = {meta.name: meta for doctype in doctypes for meta in get_meta_bundle(doctype)}
+	# A model may present a site's own doctype, e.g. Product: a site without it leaves it out.
+	present = [doctype for doctype in doctypes if frappe.db.exists("DocType", doctype)]
+	metas = {meta.name: meta for doctype in present for meta in get_meta_bundle(doctype)}
 	return {"metas": list(metas.values()), "placements": get_placements()}

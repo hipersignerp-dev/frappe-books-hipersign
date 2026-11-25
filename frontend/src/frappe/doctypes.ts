@@ -25,6 +25,12 @@ export function registerFrappeModels(map: Record<string, FrappeModel>) {
   }
 }
 
+/** Forgets a model whose DocType the site does not have, so nothing offers its screens. */
+export function unregisterFrappeModel(schemaName: string) {
+  models.delete(schemaName);
+  docTypes.delete(schemaName);
+}
+
 /** Whether the schema is known: a model's, or the rows of a table it holds. */
 export function isFrappeBacked(schemaName: string | undefined): boolean {
   return !!schemaName && (models.has(schemaName) || docTypes.has(schemaName));

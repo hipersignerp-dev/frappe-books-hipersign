@@ -4,6 +4,40 @@ const appRoot = new URL('../../../frappe_books/', import.meta.url);
 
 export const doctypes = readDoctypes(new URL('frappe_books/doctype/', appRoot));
 
+// The Product DocType a site adds (the Hipersign setup), which the app does not ship.
+export const productMetas = [
+  {
+    name: 'Product',
+    autoname: 'field:product_code',
+    title_field: 'product_name',
+    permissions: [],
+    fields: [
+      { fieldname: 'product_code', label: 'Product Code', fieldtype: 'Data', reqd: 1, unique: 1 },
+      { fieldname: 'product_name', label: 'Product Name', fieldtype: 'Data' },
+      { fieldname: 'rate', label: 'Selling Price', fieldtype: 'Currency', reqd: 1 },
+      { fieldname: 'item_group', label: 'Item Group', fieldtype: 'Link', options: 'Books Item Group' },
+      { fieldname: 'tax', label: 'Tax', fieldtype: 'Link', options: 'Books Tax' },
+      { fieldname: 'hsn_code', label: 'HSN/SAC', fieldtype: 'Data' },
+      { fieldname: 'colours', label: 'Colours', fieldtype: 'Small Text' },
+      { fieldname: 'sizes', label: 'Sizes', fieldtype: 'Small Text' },
+      { fieldname: 'variants', label: 'Variants', fieldtype: 'Table', options: 'Product Variant', read_only: 1 },
+      { fieldname: 'variant_count', label: 'Variant Count', fieldtype: 'Int', read_only: 1 },
+    ],
+  },
+  {
+    name: 'Product Variant',
+    istable: 1,
+    permissions: [],
+    fields: [
+      { fieldname: 'item', label: 'Item', fieldtype: 'Link', options: 'Books Item', read_only: 1 },
+      { fieldname: 'colour', label: 'Colour', fieldtype: 'Data', read_only: 1 },
+      { fieldname: 'size', label: 'Size', fieldtype: 'Data', read_only: 1 },
+      { fieldname: 'barcode', label: 'Barcode', fieldtype: 'Data', read_only: 1 },
+    ],
+  },
+];
+
+
 /**
  * A doctype's meta and its tables' meta, with fields in field order, as
  * Frappe's getdoctype sends them. Currency is Frappe's own doctype.
@@ -18,13 +52,20 @@ export function getMetaBundle(name) {
 
 /** What frappe_books.meta.get_books_meta answers for the doctypes, from the DocType files. */
 export function getBooksMeta(doctypes, placements = {}) {
-  const metas = doctypes.flatMap(getMetaBundle);
+  // As the server does, a doctype the site lacks (e.g. Product) is left out.
+  const metas = doctypes.filter(hasMeta).flatMap(getMetaBundle);
   const byName = new Map(metas.map((meta) => [meta.name, meta]));
   return { metas: [...byName.values()], placements };
 }
 
+function hasMeta(name) {
+  return [...doctypes, ...productMetas, currencyMeta, countryMeta, printFormatMeta].some(
+    (meta) => meta.name === name
+  );
+}
+
 function getMeta(name) {
-  const meta = [...doctypes, currencyMeta, countryMeta, printFormatMeta].find(
+  const meta = [...doctypes, ...productMetas, currencyMeta, countryMeta, printFormatMeta].find(
     (meta) => meta.name === name
   );
   const order = meta.field_order ?? [];

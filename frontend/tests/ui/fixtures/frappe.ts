@@ -89,8 +89,12 @@ function getBooksMeta(
   names: string[],
   customFields: Record<string, DocField[]>
 ) {
+  // As the server does, a doctype the site lacks (e.g. Product) is left out.
+  const known = [...doctypes, ...frappeMetas].map((meta) => meta.name);
   const metas = new Map(
-    names.flatMap(getMetaBundle).map((meta) => {
+    names
+      .filter((name) => known.includes(name))
+      .flatMap(getMetaBundle).map((meta) => {
       const fields = [...meta.fields, ...(customFields[meta.name] ?? [])];
       return [meta.name, { ...meta, fields }];
     })
